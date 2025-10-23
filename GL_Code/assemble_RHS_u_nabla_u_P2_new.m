@@ -1,11 +1,11 @@
-function F = assemble_RHS_u_nabla_u_P2(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y,parallel)
+function F = assemble_RHS_u_nabla_u_P2_new(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y,parallel)
 %ASSEMBLE_RHS_U_NABLA_U_P2 Summary of this function goes here
 %   Detailed explanation goes here
 
 if parallel
-    F = assemble_RHS_u_nabla_u_P2_parallel(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y);
+    F = assemble_RHS_u_nabla_u_P2_parallel_new(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y);
 else
-    F = assemble_RHS_u_nabla_u_P2_sequential(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y);
+    F = assemble_RHS_u_nabla_u_P2_sequential_new(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y);
 end
 end
 
@@ -13,7 +13,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function F = assemble_RHS_u_nabla_u_P2_sequential(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y)
+function F = assemble_RHS_u_nabla_u_P2_sequential_new(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y)
 % sequential implementation
 Nx = sum(logical(nodes2mesh_x));
 Ny = sum(logical(nodes2mesh_y));
@@ -80,7 +80,7 @@ for k = 1:size(T,1)
         end
     end
 
-    u_in_quad = abs(u_in_quad).^2;
+    %u_in_quad = abs(u_in_quad).^2;
     f1_in_quad = conj(u_in_quad).*gradu_in_quad(:,1) - u_in_quad.*conj(gradu_in_quad(:,1));
     f2_in_quad = conj(u_in_quad).*gradu_in_quad(:,2) - u_in_quad.*conj(gradu_in_quad(:,2));
 
@@ -104,7 +104,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function F = assemble_RHS_u_nabla_u_P2_parallel(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y)
+function F = assemble_RHS_u_nabla_u_P2_parallel_new(u,T,T_P1,Nd,nodes2mesh,nodes2mesh_x,nodes2mesh_y)
 % parallel implementation
 Nx = sum(logical(nodes2mesh_x));
 Ny = sum(logical(nodes2mesh_y));
@@ -177,7 +177,7 @@ for k = my_index_start:my_index_end
         end
     end
 
-    u_in_quad = abs(u_in_quad).^2;
+    %u_in_quad = abs(u_in_quad).^2;
     f1_in_quad = conj(u_in_quad).*gradu_in_quad(:,1) - u_in_quad.*conj(gradu_in_quad(:,1));
     f2_in_quad = conj(u_in_quad).*gradu_in_quad(:,2) - u_in_quad.*conj(gradu_in_quad(:,2));
 

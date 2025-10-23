@@ -13,7 +13,7 @@ grad = { @(x) [4*x(1) + 4*x(2) - 3; 4*x(1) + 4*x(2) - 3];
     @(x) [0; 4*x(2) - 1];
     @(x) [-4*x(2); -4*(x(1) + 2*x(2) - 1)]};
 
-[quad,w] = getQuadrature(3);
+[quad,w] = getQuadrature(7);
 no_of_basis = size(grad,1);
 no_of_quad_points = length(w);
 grad_in_quad = zeros(2,no_of_quad_points,no_of_basis);

@@ -1,11 +1,11 @@
-function S = assemble_bilinear_form_with_P2(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
+function S = assemble_bilinear_form_with_fun(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
 %ASSEMBLEGLOBALBILINEARFORM Summary of this function goes here
 %   Detailed explanation goes here
 
 if parallel
-    S = assemble_bilinear_form_with_P2_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
+    S = assemble_bilinear_form_with_fun_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
 else
-    S = assemble_bilinear_form_with_P2_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
+    S = assemble_bilinear_form_with_fun_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
 end
 end
 
@@ -13,7 +13,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function S = assemble_bilinear_form_with_P2_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y)
+function S = assemble_bilinear_form_with_fun_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y)
 % sequential implementation
 Nx = sum(logical(nodes2mesh_x));
 
@@ -66,6 +66,8 @@ for k = 1:size(T,1)
     BT = [z2(1)-z1(1), z3(1)-z1(1); ...
         z2(2)-z1(2), z3(2)-z1(2)];
 
+    b = [z1(1); z1(2)];
+
     detBT = BT(1,1)*BT(2,2)-BT(1,2)*BT(2,1);
 
     BTinv = inv(BT)';
@@ -75,16 +77,8 @@ for k = 1:size(T,1)
     tri_P2 = T_P2(k,:);
     A_in_quad = zeros(2,no_of_quad_points);
 
-    for i = 1:no_of_basis_P2
-        index = nodes2mesh_x(tri_P2(i));
-        if index ~= 0
-            A_in_quad(1,:) = A_in_quad(1,:) + A(index)*phi_P2_in_quad(:,i)';
-        end
-
-        index = nodes2mesh_y(tri_P2(i));
-        if index ~= 0
-            A_in_quad(2,:) = A_in_quad(2,:) + A(Nx + index)*phi_P2_in_quad(:,i)';
-        end
+    for i = 1:no_of_quad_points
+        A_in_quad(:,i) = A(BT*quad(:,i) + b);
     end
 
     %% assemble
@@ -120,7 +114,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function S = assemble_bilinear_form_with_P2_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
+function S = assemble_bilinear_form_with_fun_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
 % parallel implementation
 Nx = sum(logical(nodes2mesh_x));
 dim = size(Nd,1);
@@ -177,6 +171,8 @@ spmd
         BT = [z2(1)-z1(1), z3(1)-z1(1); ...
             z2(2)-z1(2), z3(2)-z1(2)];
 
+        b = [z1(1); z1(2)];
+
         detBT = BT(1,1)*BT(2,2)-BT(1,2)*BT(2,1);
 
         BTinv = inv(BT)';
@@ -186,16 +182,8 @@ spmd
         tri_P2 = T_P2(k,:);
         A_in_quad = zeros(2,no_of_quad_points);
 
-        for i = 1:no_of_basis_P2
-            index = nodes2mesh_x(tri_P2(i));
-            if index ~= 0
-                A_in_quad(1,:) = A_in_quad(1,:) + A(index)*phi_P2_in_quad(:,i)';
-            end
-
-            index = nodes2mesh_y(tri_P2(i));
-            if index ~= 0
-                A_in_quad(2,:) = A_in_quad(2,:) + A(Nx + index)*phi_P2_in_quad(:,i)';
-            end
+        for i = 1:no_of_quad_points
+            A_in_quad(:,i) = A(BT*quad(:,i) + b);
         end
 
         %% assemble

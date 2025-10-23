@@ -1,11 +1,11 @@
-function S = assemble_bilinear_form_with_P2(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
+function [S,G] = assemble_bilinear_form_and_A_density_with_P2(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
 %ASSEMBLEGLOBALBILINEARFORM Summary of this function goes here
 %   Detailed explanation goes here
 
 if parallel
-    S = assemble_bilinear_form_with_P2_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
+    [S,G] = assemble_bilinear_form_and_A_density_with_P2_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
 else
-    S = assemble_bilinear_form_with_P2_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
+    [S,G] = assemble_bilinear_form_and_A_density_with_P2_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y);
 end
 end
 
@@ -13,13 +13,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function S = assemble_bilinear_form_with_P2_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y)
+function [S,G] = assemble_bilinear_form_and_A_density_with_P2_sequential(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y)
 % sequential implementation
 Nx = sum(logical(nodes2mesh_x));
 
 s_i = zeros(9*size(T,1),1);
 s_j = zeros(9*size(T,1),1);
 s_val = zeros(9*size(T,1),1);
+g_i = zeros(9*size(T,1),1);
+g_j = zeros(9*size(T,1),1);
+g_val = zeros(9*size(T,1),1);
 ind = 1;
 
 grad = {[-1; -1]; [1; 0]; [0; 1]};
@@ -92,20 +95,32 @@ for k = 1:size(T,1)
         for j = i:3
             int = diag((1i/kappa * grad_in_BT(:,:,i)+ phi_in_quad(:,i)'.*A_in_quad)'*(1i/kappa * grad_in_BT(:,:,j)+ phi_in_quad(:,j)'.*A_in_quad));
             e = detBT*evaluateQuadrature(transpose(int),w);
+
+            int_g = diag((phi_in_quad(:,i)'.*A_in_quad)'*(phi_in_quad(:,j)'.*A_in_quad));
+            e_g = detBT*evaluateQuadrature(transpose(int_g),w);
             if i == j
                 s_i(ind) = tri(i);
                 s_j(ind) = tri(i);
                 s_val(ind) = e;
+                g_i(ind) = tri(i);
+                g_j(ind) = tri(i);
+                g_val(ind) = e_g;
                 ind = ind + 1;
             else
                 s_i(ind) = tri(i);
                 s_j(ind) = tri(j);
                 s_val(ind) = conj(e);
+                g_i(ind) = tri(i);
+                g_j(ind) = tri(j);
+                g_val(ind) = conj(e_g);
                 ind = ind + 1;
 
                 s_i(ind) = tri(j);
                 s_j(ind) = tri(i);
                 s_val(ind) = e;
+                g_i(ind) = tri(j);
+                g_j(ind) = tri(i);
+                g_val(ind) = e_g;
                 ind = ind + 1;
             end
         end
@@ -113,6 +128,7 @@ for k = 1:size(T,1)
 end
 
 S = sparse(s_i,s_j,s_val);
+G = sparse(g_i,g_j,g_val);
 
 end
 
@@ -120,8 +136,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function S = assemble_bilinear_form_with_P2_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y,parallel)
-% parallel implementation
+function [S,G] = assemble_bilinear_form_and_A_density_with_P2_parallel(A,kappa,T,T_P2,Nd,nodes2mesh_x,nodes2mesh_y)
+% parallel impplementation
 Nx = sum(logical(nodes2mesh_x));
 dim = size(Nd,1);
 
@@ -165,6 +181,9 @@ spmd
     s_i = zeros(9*size(T,1),1);
     s_j = zeros(9*size(T,1),1);
     s_val = zeros(9*size(T,1),1);
+    g_i = zeros(9*size(T,1),1);
+    g_j = zeros(9*size(T,1),1);
+    g_val = zeros(9*size(T,1),1);
     ind = 1;
 
     for k = my_index_start:my_index_end
@@ -203,20 +222,32 @@ spmd
             for j = i:3
                 int = diag((1i/kappa * grad_in_BT(:,:,i)+ phi_in_quad(:,i)'.*A_in_quad)'*(1i/kappa * grad_in_BT(:,:,j)+ phi_in_quad(:,j)'.*A_in_quad));
                 e = detBT*evaluateQuadrature(transpose(int),w);
+
+                int_g = diag((phi_in_quad(:,i)'.*A_in_quad)'*(phi_in_quad(:,j)'.*A_in_quad));
+                e_g = detBT*evaluateQuadrature(transpose(int_g),w);
                 if i == j
                     s_i(ind) = tri(i);
                     s_j(ind) = tri(i);
                     s_val(ind) = e;
+                    g_i(ind) = tri(i);
+                    g_j(ind) = tri(i);
+                    g_val(ind) = e_g;
                     ind = ind + 1;
                 else
                     s_i(ind) = tri(i);
                     s_j(ind) = tri(j);
                     s_val(ind) = conj(e);
+                    g_i(ind) = tri(i);
+                    g_j(ind) = tri(j);
+                    g_val(ind) = conj(e_g);
                     ind = ind + 1;
 
                     s_i(ind) = tri(j);
                     s_j(ind) = tri(i);
                     s_val(ind) = e;
+                    g_i(ind) = tri(j);
+                    g_j(ind) = tri(i);
+                    g_val(ind) = e_g;
                     ind = ind + 1;
                 end
             end
@@ -228,14 +259,15 @@ spmd
         del_index = length(s_i)+1;
     end
     S_worker = sparse(s_i(1:del_index-1),s_j(1:del_index-1),s_val(1:del_index-1),dim,dim);
-
+    G_worker = sparse(g_i(1:del_index-1),g_j(1:del_index-1),g_val(1:del_index-1),dim,dim);
 end
 
 % collect results from workers
 S = sparse(dim,dim);
+G = sparse(dim,dim);
 for j = 1:length(my_index_start)
     S = S + S_worker{j};
+    G = G + G_worker{j};
 end
 
 end
-

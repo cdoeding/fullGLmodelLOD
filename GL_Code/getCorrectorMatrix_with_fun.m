@@ -1,11 +1,11 @@
-function Q = getCorrectorMatrix_with_P2(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y,parallel)
+function Q = getCorrectorMatrix_with_fun(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y,parallel)
 %GETCORRECTORMA Summary of this function goes here
 %   Detailed explanation goes here
 
 if parallel
-    Q = getCorrectorMatrixParallel_with_P2(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y);
+    Q = getCorrectorMatrixParallel_with_fun(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y);
 else
-    Q = getCorrectorMatrixSequential_with_P2(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y);
+    Q = getCorrectorMatrixSequential_with_fun(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y);
 end
 end
 
@@ -13,7 +13,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function Q = getCorrectorMatrixSequential_with_P2(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y)
+function Q = getCorrectorMatrixSequential_with_fun(T_H,T_h,T_P2,patches,A_h,kappa,beta,S_h,M_h,P1,P0,B_H,B_h,nodes2mesh_x,nodes2mesh_y)
 N_h = size(T_h.p,1);
 N_H = size(T_H.p,1);
 NT_H = size(T_H.t,1);
@@ -24,7 +24,7 @@ Q = sparse(N_H,N_h);
 for l = 1:NT_H
     [Rl_H,Rl_h] = getRestriction(T_H,T_h,l,patches,P0,B_H,B_h);
     T = getNode2MeshMatrix(T_H,l);
-    S_loc = assembleLocalBilinearForm_with_P2(A_h,kappa,T_h,T_P2,P0,l,nodes2mesh_x,nodes2mesh_y);
+    S_loc = assembleLocalBilinearForm_with_fun(A_h,kappa,T_h,T_P2,P0,l,nodes2mesh_x,nodes2mesh_y);
     M_loc = assembleLocalMassMatrix(T_h,P0,l);
     
     Nl_h = size(Rl_h,1);
